@@ -42,17 +42,30 @@ fetchers    ─┘                 │
 
 ## Quickstart
 
-```bash
-git clone <this repo> && cd mimir
+```
+git clone https://github.com/Michiel-DK/mimir && cd mimir
 pip install -r requirements.txt
 cp radar.example.yaml radar.yaml           # then edit, or run skills/radar-profile against your repos
-cp leakgate.example.txt leakgate.txt       # your banned terms, git-ignored
-python3 scripts/fetch_trending.py && python3 scripts/compute_trends.py
-python3 scripts/fetch_papers.py            # OPENALEX_API_KEY optional
-# now run the radar-triage skill on the new PAPERS.md section + data/daily arrivals
+
+# try the triage now, on a shipped week of real feed (no cron needed):
+#   in your agent: "run skills/radar-triage on examples/2026-10-19 against radar.yaml"
+
+# your own feed, from the second week on:
+python3 scripts/fetch_trending.py && python3 scripts/compute_trends.py   # daily (or let daily.yml run it)
+python3 scripts/fetch_papers.py            # weekly; OPENALEX_API_KEY optional
+python3 scripts/arrivals.py --since <day after your last triage>          # → data/arrivals/<date>.md
+#   in your agent: "run skills/radar-triage on the newest PAPERS.md section + data/arrivals/<date>.md"
+
+# the skill cites evidence it fetched; this does the fetching and the licence walk:
+python3 scripts/evidence.py 2610.18813 hf:org/model owner/repo https://huggingface.co/blog/...
+
+python3 -m unittest discover -s tests      # no network
 ```
 
-Enable the two workflows in `.github/workflows/` to run the fetchers on a schedule.
+Two things the scripts guarantee that the prose cannot: `arrivals.py` computes **arrivals**
+(first appearance in the full history), not "newcomers" (first seen today), and `evidence.py`
+reads **every** LICENSE/COPYING file at every tree depth and flags a mixed or missing licence.
+Both traps cost real triage weeks before they became functions (see TRAPS.md).
 
 ## What the triage will and will not claim
 
@@ -85,14 +98,19 @@ were written down before the runs.
 ## Layout
 
 ```
-radar.example.yaml      the profile format, filled in for a fictional team
-TEMPLATE.md             one triage section, and the fixed verdict vocabulary
-TRAPS.md                thirteen ways this data lies
+radar.yaml              your profile (git-ignored by choice; radar.example.yaml is the shape)
+scripts/fetch_trending.py   GitHub trending → data/daily/<date>.jsonl (+ .meta.json coverage)
+scripts/compute_trends.py   daily diff: newcomers / climbers / persisters, rolling top-N
+scripts/fetch_papers.py     HF blog + arXiv (OpenAlex) by track → PAPERS.md section
+scripts/fetch_problems.py   demand signals (best effort) → data/problems/
+scripts/arrivals.py         true arrivals over a window → data/arrivals/<date>.md  (triage input 2)
+scripts/evidence.py         arXiv / HF model / HF blog / GitHub + licence-at-every-depth → evidence/<date>/
+scripts/leak_gate.py        blocks secrets and your banned terms (leakgate.txt) before a push
+scripts/radar_config.py     the loader every fetcher reads radar.yaml through
 skills/radar-triage/    the triage procedure and its non-optional rules
 skills/radar-profile/   how to draft radar.yaml from a repo tree
-scripts/                fetch_trending, compute_trends, fetch_problems, fetch_papers, leak_gate, radar_config
-.github/workflows/      daily-radar, weekly-papers
-data/ pickup/ evidence/ outputs
+examples/2026-10-19/    one real week (papers section + arrivals) to try the skill on
+tests/                  smoke tests, no network; .github/workflows/ci.yml runs them
+TEMPLATE.md             the output shape and verdict vocabulary
+TRAPS.md                how the data lies
 ```
-
-Apache-2.0.

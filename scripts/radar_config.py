@@ -11,9 +11,10 @@ ROOT = Path(__file__).resolve().parent.parent
 _cache = None
 
 
-def load():
+def load(reload=False):
+    """Return the profile dict (cached). reload=True re-reads RADAR_YAML."""
     global _cache
-    if _cache is not None:
+    if _cache is not None and not reload:
         return _cache
     p = Path(os.environ.get("RADAR_YAML") or ROOT / "radar.yaml")
     if not p.exists():
