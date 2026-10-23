@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+leakgate.txt
+leakgate.allow.txt
+evidence/*/
+!evidence/.gitkeep

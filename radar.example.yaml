@@ -1,0 +1,80 @@
+# radar.example.yaml — copy to radar.yaml and replace with your lanes.
+# A fictional three-person team is used here. Every key below is read by radar-triage; see skills/radar-profile/SKILL.md.
+
+version: 0
+owner: "Example Labs — small team shipping a support-ticket agent and an internal eval harness"
+cadence: "weekly triage of the papers feed; trending arrivals since the last triage"
+
+sources:
+  github_trending: {slices: ["overall", "python", "typescript"], since: daily}
+  hf_blog: {feed: "https://huggingface.co/blog/feed.xml"}
+  arxiv_via_openalex: {source: "S4306400194", field: "fields/17"}
+  hn_problems: {phrases: ["I wish there was", "is there a tool", "someone should build", "doing this manually"]}
+
+tracks:
+  "agents": '"agent harness" OR "agent evaluation" OR "long-horizon agent" OR "tool use"'
+  "serving": '"LLM inference" OR "KV cache" OR "speculative decoding"'
+  "watch: mid-training": '"mid-training"'
+
+tags:
+  "agents": "\\bagents?\\b|agentic|harness|tool"
+  "serving": "inference|quantiz|serving|latency|gpu|llama\\.cpp"
+
+lanes:
+  - id: ticket-agent-evals
+    repo: support-agent
+    status: live
+    question: "Does a cheaper model resolve the same held-out tickets as the frontier model, judged by deterministic checks?"
+    what_exists: "120 committed ticket cases in 4 families; practice/held-out split; deterministic field checks; no LLM judge in the runtime path; cases written by us, none by a support lead."
+    lists: ["case backlog (docs/cases-backlog.md)", "judge decision note (docs/judge.md)"]
+    glossary: [case, held-out, resolution check, re-sit, saturated, trajectory]
+    reopen_when:
+      - "a trajectory-level check that is deterministic and needs no judge"
+      - "a method to harden a saturated case while keeping its objective"
+      - "a judge evaluated on multi-turn tool trajectories, not only single answers"
+      - "a method for how support leads should author or veto cases"
+    not_now: [fine-tuning, a review UI]
+
+  - id: runtime-proxy
+    repo: support-agent
+    status: next
+    question: "Adopt or build the proxy in front of every model call: OpenAI + Anthropic formats, spans carrying case id + outcome + cost, per-key budgets, fallback."
+    what_exists: "a decision note comparing two gateways vs build; nothing deployed."
+    lists: ["adopt-vs-build note (docs/runtime-decision.md)"]
+    glossary: [proxy, gateway, span, case id on a span, per-key budget, fallback]
+    reopen_when:
+      - "a self-hosted gateway with per-key budgets, usage rows per attempt, fallback routing and OpenTelemetry, under Apache-2.0 / MIT / BSD (revenue-capped licences do not count)"
+      - "a documented failure mode in a candidate gateway (rate limits, cooldowns, tenant isolation, cost attribution)"
+    not_now: [hosted gateways, engine-side routers]
+    candidates:
+      - {name: "gateway A", since: "2026-09-01"}
+      - {name: "gateway B", since: "2026-09-15"}
+
+  - id: laptop-models
+    repo: support-agent
+    status: live
+    question: "Which open models ≤ 35B total run the 4 case families on one laptop, at what cost per 10,000 tickets?"
+    what_exists: "rows for three local and four hosted open models; prices are marketplace list rates with a dated footnote."
+    lists: ["model table (results/models.json)"]
+    glossary: [laptop tier, active parameters, $ per 10k, tok/s, reasoning-only]
+    reopen_when:
+      - "an open model ≤ 35B total or ≤ 4B active with tool-use claims under Apache-2.0 / MIT / Gemma-style terms"
+      - "a KV-cache or serving change that moves laptop latency on consumer hardware"
+    not_now: [models > 100B, image/video models]
+
+  - id: harness
+    repo: dev-harness
+    status: live
+    question: "Keep the coding-agent harness cheap and honest: 12 skills, a trigger eval, deterministic gates; no token-cost-per-session number yet."
+    what_exists: "12 skills (9 without an eval case); trigger eval rank-1 12/12; a drift check."
+    lists: ["skill eval backlog (docs/skill-eval.md)"]
+    glossary: [skill, trigger eval, rank-1, gate, compaction]
+    reopen_when:
+      - "skill selection or reranking methods for sibling skills"
+      - "ablation or pruning methods for harness components"
+      - "failure modes tied to context compaction"
+    not_now: [skill catalogs and marketplaces]
+
+rules:
+  - "No autonomous digest; triage output is a note a human reads."
+  - "Fine-tuning is a later tier everywhere."

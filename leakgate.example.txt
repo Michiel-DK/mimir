@@ -1,0 +1,6 @@
+# One regex per line. Copy to leakgate.txt (git-ignored) and add your company, client and
+# product names, personal identifiers and internal file names. Examples:
+# \bacme\b
+# acme-internal
+# Jane Doe
+# jane\.doe@
