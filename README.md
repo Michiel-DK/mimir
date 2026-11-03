@@ -42,6 +42,12 @@ fetchers    ─┘                 │
 2. **Fetch.** Two GitHub Actions: daily trending (per language slice, with retries and a coverage
    sidecar so a silently missing slice is loud) and weekly papers (Hugging Face blog + arXiv through
    OpenAlex, queries from your `tracks`). Demand signals from Hacker News are optional.
+   **In CI there is no profile** (`radar.yaml` is git-ignored), so the Actions fetch with built-in
+   default queries; that is why this repo's own `PAPERS.md` has generic track names. To fetch with
+   your tracks, either run the fetchers where your profile lives, or commit a queries-only profile
+   (e.g. `radar.tracks.yaml`: `tracks:` and `sources:`, no lanes) and set the repository variable
+   `RADAR_YAML` to its path. The arrivals list is weak until `data/daily` holds ~30 snapshots; the
+   file says so in its header.
 3. **Triage.** Your agent (Claude Code or anything that reads a `SKILL.md`) runs
    `skills/radar-triage` on the new section. The rules live in the skill, not in prose: every row
    cites a saved artefact, abstract-only reads are labelled, licence files are read at every tree

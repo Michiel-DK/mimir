@@ -10,6 +10,11 @@ on:
       dry_run: {description: "Print the section, commit nothing", type: boolean, default: false}
 concurrency: {group: weekly-papers, cancel-in-progress: false}
 permissions: {contents: write}
+env:
+  # radar.yaml is git-ignored, so this runner has no profile and the fetchers use their built-in
+  # default queries. To fetch with YOUR tracks, commit a queries-only profile (no lanes) and set the
+  # repository variable RADAR_YAML to its path. Empty = defaults.
+  RADAR_YAML: "${{ vars.RADAR_YAML }}"
 jobs:
   papers:
     runs-on: ubuntu-latest

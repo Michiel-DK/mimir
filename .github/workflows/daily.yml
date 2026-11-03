@@ -8,6 +8,11 @@ on:
   workflow_dispatch:
 concurrency: {group: daily-radar, cancel-in-progress: false}
 permissions: {contents: write}
+env:
+  # radar.yaml is git-ignored, so this runner has no profile and the fetchers use their built-in
+  # default queries. To fetch with YOUR tracks, commit a queries-only profile (no lanes) and set the
+  # repository variable RADAR_YAML to its path. Empty = defaults.
+  RADAR_YAML: "${{ vars.RADAR_YAML }}"
 jobs:
   radar:
     runs-on: ubuntu-latest
