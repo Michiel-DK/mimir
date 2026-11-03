@@ -1,0 +1,70 @@
+# radar.yaml — DUMMY PROFILE A for a transfer test. A fictional two-person data consultancy with no
+# AI product: warehouse pipelines, a document-extraction job for one client, static client reports.
+# Most of a papers feed should be noise for these lanes; the test is whether the triage says so.
+
+version: 0
+owner: "Rivermouth Data — two-person analytics consultancy (Porto). Work: dbt warehouses for three SME clients, an invoice-PDF extraction job for one of them, static monthly report pages. No agent product, no GPU."
+cadence: "weekly triage of the papers feed; trending arrivals since the last triage"
+
+sources:
+  github_trending: {slices: ["overall", "python"], since: daily}
+  hf_blog: {feed: "https://huggingface.co/blog/feed.xml"}
+  arxiv_via_openalex: {source: "S4306400194", field: "fields/17"}
+
+handoff:
+  mode: issue
+  repos:
+    rivermouth-dbt: rivermouth-data/rivermouth-dbt
+    rivermouth-extract: rivermouth-data/rivermouth-extract
+    rivermouth-reports: rivermouth-data/rivermouth-reports
+  labels: [mimir]
+  pr_path: docs/pickup
+
+tracks:
+  "extraction": '"document understanding" OR "invoice extraction" OR "table extraction" OR OCR'
+  "data-quality": '"data quality" OR "data validation" OR "schema drift"'
+  "watch: text-to-sql": '"text-to-SQL"'
+
+tags:
+  "extraction": "ocr|invoice|document|pdf|extraction|layout"
+  "data-quality": "data quality|validation|schema|warehouse|dbt"
+
+lanes:
+  - id: warehouse-tests
+    repo: rivermouth-dbt
+    status: live
+    question: "Catch bad rows before a client sees them: which deterministic checks on dbt models pay for themselves, and which alerts are noise?"
+    what_exists: "about 180 dbt tests across three client projects (uniqueness, not-null, accepted values, freshness); a weekly alert digest; a hand-kept list of alerts that fired but were not real problems; no anomaly detection, no ML."
+    lists: ["check backlog (docs/checks-backlog.md)", "alert-noise log (docs/alert-noise.md)"]
+    glossary: [dbt test, freshness, schema drift, false alert, digest, client project]
+    reopen_when:
+      - "a deterministic schema-drift or distribution check that runs inside dbt with no model"
+      - "evidence on which data-quality alerts practitioners actually act on"
+    not_now: [LLM-written tests, anomaly-detection services, an observability platform]
+
+  - id: invoice-extraction
+    repo: rivermouth-extract
+    status: live, one client
+    question: "Extract 11 fields from supplier invoice PDFs for one client at under 2 cents a page on a CPU box, with a human checking exceptions; when does a model beat the current rules-plus-OCR pipeline?"
+    what_exists: "Tesseract OCR plus regex rules; 94% field accuracy on the client's 400 graded invoices; exceptions go to a spreadsheet the client checks; runs on a 4-vCPU box, no GPU."
+    lists: ["extraction candidates (docs/extraction-candidates.md)"]
+    glossary: [field accuracy, graded invoice, exception, cents per page, CPU-only]
+    reopen_when:
+      - "a document-extraction model with a permissive licence that runs on CPU at a stated cost per page"
+      - "a public invoice benchmark with field-level accuracy on supplier invoices"
+    not_now: [GPU hosting, hosted OCR APIs with per-document pricing above 2 cents, fine-tuning]
+
+  - id: client-reports
+    repo: rivermouth-reports
+    status: live
+    question: "Static monthly report pages whose numbers come only from committed query results."
+    what_exists: "a Python script renders HTML from committed CSVs; one page per client; no live queries."
+    lists: ["report backlog (docs/report-backlog.md)"]
+    glossary: [committed result, report page, footnote]
+    reopen_when:
+      - "a static-site change that keeps numbers sourced from committed files"
+    not_now: [dashboards with live queries, natural-language-over-data features]
+
+rules:
+  - "No AI feature ships to a client without the client's own graded sample."
+  - "No GPU; everything runs on the 4-vCPU box or in GitHub Actions."

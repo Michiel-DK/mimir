@@ -10,6 +10,8 @@ One real week of feed, so the triage skill can be tried before the first cron ru
   2 or 3 there means the repo really is new. Evidence you fetch today will show today's stars.
 - `2026-10-19/VERDICTS.md`, `2026-10-19/pickup/` — the fresh agent's run (see below); the pickup
   blocks are what `handoff.py --dry-run --pickup-dir examples/2026-10-19/pickup` renders.
+- `profiles/` — two more fictional profiles for projects unlike the example's, with what a fresh
+  agent produced on each (see `profiles/README.md`).
 
 Try it:
 

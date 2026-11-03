@@ -1,0 +1,69 @@
+# radar.yaml — DUMMY PROFILE B for a transfer test. A fictional solo developer shipping an iOS
+# journaling app with an on-device assistant. Small models, app-size and privacy constraints,
+# no server. The test is whether verdicts stay relative to these constraints.
+
+version: 0
+owner: "Pocketbird — one-person studio (Lisbon) shipping a paid iOS journaling app with an on-device writing assistant. No backend, no server-side inference, no team."
+cadence: "weekly triage of the papers feed; trending arrivals since the last triage"
+
+sources:
+  github_trending: {slices: ["overall", "swift", "python"], since: daily}
+  hf_blog: {feed: "https://huggingface.co/blog/feed.xml"}
+  arxiv_via_openalex: {source: "S4306400194", field: "fields/17"}
+
+handoff:
+  mode: issue
+  repos:
+    pocketbird-ios: pocketbird/pocketbird-ios
+    pocketbird-models: pocketbird/pocketbird-models
+  labels: [mimir]
+  pr_path: docs/pickup
+
+tracks:
+  "on-device": '"on-device" OR "edge inference" OR "mobile inference" OR "small language model"'
+  "speech": '"speech recognition" OR "on-device ASR"'
+  "watch: safety": '"prompt injection" OR "jailbreak"'
+
+tags:
+  "on-device": "on-device|mobile|edge|quantiz|coreml|mlx|small model|[0-9](\\.[0-9])?B"
+  "speech": "speech|asr|transcri"
+
+lanes:
+  - id: on-device-model
+    repo: pocketbird-models
+    status: live
+    question: "Which open text model under 2B parameters gives the best rewrite and summary quality on the app's 60 graded journal entries, inside a 1.2 GB download and 1.5 s per response on an iPhone 15?"
+    what_exists: "Gemma-class 1B at 4-bit via MLX ships today; 60 graded entries with a 1–5 human score; a rewrite template and a summary template; download budget 1.2 GB; p95 latency 1.5 s on iPhone 15 measured in-app; licence must allow a paid app with no revenue cap."
+    lists: ["model bake-off (docs/bakeoff.md)"]
+    glossary: [4-bit, MLX, Core ML, download budget, p95 on device, graded entry, rewrite, summary, revenue cap]
+    reopen_when:
+      - "an open text model ≤ 2B parameters with a licence that allows paid apps and no revenue cap"
+      - "an on-device inference change that cuts latency or memory on Apple silicon phones"
+      - "a quantisation method with a quality number at 4-bit or below on a model this size"
+    not_now: [models above 4B, server inference, fine-tuning, Android]
+
+  - id: speech-input
+    repo: pocketbird-ios
+    status: queued
+    question: "On-device dictation for journal entries in English and Portuguese, offline, with word-level timestamps, under 300 MB extra download."
+    what_exists: "Apple's built-in dictation only; no timestamps; no Portuguese quality number; a 20-clip test set recorded by the developer."
+    lists: ["speech candidates (docs/speech.md)"]
+    glossary: [offline, word timestamps, clip set, extra download]
+    reopen_when:
+      - "an open speech model that runs on-device on iPhone with English and Portuguese and a stated size"
+    not_now: [cloud transcription, diarisation, real-time streaming]
+
+  - id: content-safety
+    repo: pocketbird-ios
+    status: parked
+    question: "Journal text is untrusted input to the assistant: can a pasted entry make the rewrite do something the user did not ask for, and can a deterministic check catch it?"
+    what_exists: "no injection cases; the assistant has no tools, so the worst case is a wrong rewrite; a short hand list of things the rewrite must never do (delete text, add claims)."
+    lists: ["safety cases (docs/safety-cases.md)"]
+    glossary: [untrusted entry, rewrite contract, deterministic check]
+    reopen_when:
+      - "an attack class on text-only assistants without tools that can be written as a deterministic test case"
+    not_now: [guardrail services, tool-use attacks, a moderation model]
+
+rules:
+  - "Nothing leaves the device; no telemetry of entry text."
+  - "Every model row cites the licence file, not the badge."
