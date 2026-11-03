@@ -193,8 +193,9 @@ def gate_body(body: str, run) -> None:
 
 
 def existing_issue(repo: str, title: str, run) -> str | None:
-    r = run(["gh", "issue", "list", "--repo", repo, "--state", "all", "--search", f'in:title "{title}"',
-             "--json", "title,url", "--limit", "20"])
+    # A plain list, not `--search`: GitHub's search index lags issue creation by seconds, and a
+    # re-run inside that window opened a duplicate once. The list endpoint is read-after-write.
+    r = run(["gh", "issue", "list", "--repo", repo, "--state", "all", "--json", "title,url", "--limit", "500"])
     if r.returncode != 0:
         raise SystemExit(f"handoff: gh issue list failed for {repo}: {r.stderr.strip()}")
     try:
