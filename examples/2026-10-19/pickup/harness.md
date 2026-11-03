@@ -1,0 +1,2 @@
+## 2026-10-19 — from triage 2026-10-19
+- DeLoop (arXiv 2610.19376) → add a loop-after-compaction check (repeated identical tool call with identical observation) to the skill eval backlog; the paper reports loops in 57.3% of Qwen3-8B tasks under compression, and its DPO training half stays out · reopen: a harness session log shows a repeated identical tool call after compaction · evidence: abstract

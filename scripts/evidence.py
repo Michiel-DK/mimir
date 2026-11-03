@@ -172,7 +172,12 @@ def fetch_hf_blog(url: str) -> str:
         text = re.sub(r"\n{3,}", "\n\n", main.get_text("\n", strip=True))
     except Exception as e:  # noqa: BLE001
         return f"# HF blog\n\n{url}\n\n⚠️ UNVERIFIED: parse failed — {e}\n"
-    return (f"# HF blog — {title}\n\n{url}\n\n- evidence scope: (post read; benchmarks are the vendor's)\n\n"
+    skip = {"blog", "spaces", "datasets", "docs", "collections", "papers", "models", "tasks", "settings", "join", "login",
+            "organizations", "api", "front", "static", "production", "v1", "cdn-uploads", "avatars", "assets"}
+    linked = sorted({m for m in re.findall(r"huggingface\.co/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)", html)
+                     if m.split("/")[0] not in skip and not m.endswith((".png", ".svg", ".jpg", ".webp", ".gif", ".xml"))})
+    models = ("- models linked from the post (fetch each with `hf:org/name` for its licence): " + ", ".join(linked)) if linked else "- models linked from the post: none found"
+    return (f"# HF blog — {title}\n\n{url}\n\n- evidence scope: (post read; benchmarks are the vendor's)\n{models}\n\n"
             f"```\n{text[:6000]}\n```\n")
 
 
@@ -268,7 +273,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"[evidence] {e}", file=sys.stderr)
             rc = 2
             continue
-        text = FETCHERS[kind](key)
+        text = FETCHERS[kind](key).rstrip("\n") + f"\n\n_fetched {date.today().isoformat()} by evidence.py; stars, pushed_at and licences are that day's state_\n"
         if args.stdout:
             print(text)
             continue

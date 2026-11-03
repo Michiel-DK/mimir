@@ -48,6 +48,7 @@ class FakeRun:
         self.issues = issues or {}   # repo → [{"title","url"}]
         self.prs = prs or {}         # (repo, branch) → url
         self.fail_on = fail_on       # substring of a command that should fail
+        self.dirty = ""              # porcelain output for `git status -- VERDICTS.md pickup`
 
     def __call__(self, cmd, **kw):
         self.calls.append(cmd)
@@ -68,6 +69,8 @@ class FakeRun:
         if cmd[:3] == ["gh", "repo", "clone"]:
             Path(cmd[4]).mkdir(parents=True, exist_ok=True)
             return subprocess.CompletedProcess(cmd, 0, "", "")
+        if cmd[0] == "git" and "status" in cmd:
+            return subprocess.CompletedProcess(cmd, 0, self.dirty, "")
         if cmd[0] == "git" and "remote" in cmd:
             return subprocess.CompletedProcess(cmd, 0, "git@github.com:example-labs/mimir.git\n", "")
         if cmd[0] == "git":
@@ -137,6 +140,10 @@ class RenderTests(unittest.TestCase):
         self.assertIn("> Does a cheaper model", body)
         self.assertIn("DeLoop", body)
         self.assertIn("https://github.com/example-labs/mimir/blob/main/VERDICTS.md", body)
+        body2 = handoff.render_body("ticket-agent-evals", CFG["lanes"][0], block, "2026-11-03",
+                                    "https://github.com/example-labs/mimir", "https://github.com/example-labs/radar/blob/master/VERDICTS.md")
+        self.assertIn("example-labs/radar/blob/master/VERDICTS.md", body2)
+        self.assertNotIn("example-labs/mimir/blob/main", body2)
         self.assertIn("Triage opens no work", body)
         self.assertEqual(handoff.title_for("2026-11-03", "runtime-proxy"), "mimir pickup 2026-11-03: runtime-proxy")
 
@@ -248,3 +255,54 @@ class PrModeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class CliPickupDir(unittest.TestCase):
+    def test_cli_reads_blocks_from_pickup_dir_and_ledger_dir_in_dry_run(self):
+        import contextlib, io, os
+        root = Path(__file__).resolve().parent.parent
+        with tempfile.TemporaryDirectory() as d:
+            ledger = Path(d) / "ledger"
+            env_before = os.environ.get("RADAR_YAML")
+            os.environ["RADAR_YAML"] = str(root / "radar.example.yaml")
+            try:
+                import radar_config
+                radar_config.load(reload=True)
+                buf = io.StringIO()
+                with contextlib.redirect_stdout(buf):
+                    rc = handoff.main(["--date", "2026-10-19", "--dry-run",
+                                       "--pickup-dir", str(root / "examples" / "2026-10-19" / "pickup"),
+                                       "--ledger-dir", str(ledger)])
+            finally:
+                if env_before is None:
+                    os.environ.pop("RADAR_YAML", None)
+                else:
+                    os.environ["RADAR_YAML"] = env_before
+                radar_config.load(reload=True)
+        out = buf.getvalue()
+        self.assertEqual(rc, 0)
+        self.assertIn("DRY RUN issue → example-labs/support-agent", out)
+        for lane in ("runtime-proxy", "ticket-agent-evals", "harness"):
+            self.assertIn(f"mimir pickup 2026-10-19: {lane}", out)
+        self.assertIn("DRY RUN issue → example-labs/dev-harness", out)
+        self.assertIn("3 would be sent, 0 already done, 0 unmapped", out)
+        self.assertFalse(ledger.exists(), "dry run must write no ledger")
+
+
+class DirtyTree(unittest.TestCase):
+    def test_real_send_refuses_uncommitted_outputs_unless_allowed(self):
+        t, pick, ledger = _env({"ticket-agent-evals": PICKUP_A})
+        with t:
+            run = FakeRun(); run.dirty = "?? VERDICTS.md\n?? pickup/ticket-agent-evals.md\n"
+            with self.assertRaises(SystemExit) as cm:
+                handoff.handoff(CFG, "2026-11-03", pickup_dir=pick, ledger_dir=ledger, run=run, out=lambda *_: None)
+            self.assertIn("uncommitted", str(cm.exception))
+            self.assertFalse(any(c[:3] == ["gh", "issue", "create"] for c in run.calls))
+            res = handoff.handoff(CFG, "2026-11-03", pickup_dir=pick, ledger_dir=ledger, run=run, out=lambda *_: None,
+                                  allow_dirty=True)
+            self.assertEqual(res["sent"], ["ticket-agent-evals"])
+            run2 = FakeRun(); run2.dirty = "?? VERDICTS.md\n"
+            res = handoff.handoff(CFG, "2026-11-03", dry_run=True, pickup_dir=pick, ledger_dir=ledger, run=run2,
+                                  out=lambda *_: None)
+            self.assertEqual(res["sent"], [])
+            self.assertFalse(any(c[0] == "git" and "status" in c for c in run2.calls), "dry run never checks the tree")

@@ -1,0 +1,2 @@
+## 2026-10-19 — from triage 2026-10-19
+- mozilla-ai/otari → add to the adopt-vs-build note as a third candidate: self-hosted, OpenAI + Anthropic compatible, scoped keys, budget checks before spend, failover routing, Apache-2.0 in all 6 licence files; OpenTelemetry and per-attempt usage rows are unverified · reopen: its docs confirm or deny OTel spans and per-attempt usage rows · evidence: README+licence

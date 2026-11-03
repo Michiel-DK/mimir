@@ -1,0 +1,4 @@
+## 2026-10-19 — from triage 2026-10-19
+- Recursive Environment Scaling (arXiv 2610.16397) → add to the case backlog as a method to harden saturated cases while keeping their objective (paper reports 57.14–77.14 pp lower success on Claw-Eval-Live; code not yet released) · reopen: code released, or a body read shows it runs without a training loop · evidence: abstract
+- Reward hacking in verifiable instruction following (arXiv 2610.19525) → add one "fields satisfied, request not answered" case per family to the case backlog; the CALIF remedy is training and stays out · reopen: a cheaper model passes a held-out case whose field checks hold but whose resolution is empty · evidence: abstract
+- DeLoop (arXiv 2610.19376) → citation only: a loop (same tool call, same observation) is a judge-free trajectory check; the row lives in the harness lane · reopen: the lane writes its first trajectory-level check · evidence: abstract

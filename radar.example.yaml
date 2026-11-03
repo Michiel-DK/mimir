@@ -18,8 +18,10 @@ handoff:
   mode: issue                      # issue (one reading-note issue per lane) | pr (a docs file on a dated branch)
   repos:
     support-agent: example-labs/support-agent
+    dev-harness: example-labs/dev-harness
   labels: [mimir]                  # issue mode; the labels must already exist on the repo
   pr_path: docs/pickup             # pr mode: <pr_path>/<date>-<lane id>.md
+  # verdicts_url: https://github.com/you/private-radar/blob/main/VERDICTS.md   # if your verdicts live elsewhere
 
 tracks:
   "agents": '"agent harness" OR "agent evaluation" OR "long-horizon agent" OR "tool use"'
@@ -68,7 +70,7 @@ lanes:
     lists: ["model table (results/models.json)"]
     glossary: [laptop tier, active parameters, $ per 10k, tok/s, reasoning-only]
     reopen_when:
-      - "an open model ≤ 35B total or ≤ 4B active with tool-use claims under Apache-2.0 / MIT / Gemma-style terms"
+      - "an open model ≤ 35B total or ≤ 4B active with tool-use claims under Apache-2.0 / MIT; a revenue-capped or use-restricted licence is PARKED until its text is read"
       - "a KV-cache or serving change that moves laptop latency on consumer hardware"
     not_now: [models > 100B, image/video models]
 

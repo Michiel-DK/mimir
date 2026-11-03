@@ -32,6 +32,11 @@ You are judging a week of new tech **relative to the lanes in `radar.yaml`**, no
 - **No lane, no verdict.** Do not invent a lane. If an item is interesting but belongs to no lane, write it in one line under "Skipped by title" with "no lane".
 - **Respect `not_now`.** An item that matches a lane's `not_now` list is `NOT-ADOPT` or `PARKED` with that reason, never `CANDIDATE`.
 - **No builds.** Triage opens nothing. A row can say what a lane should add to a list; it cannot start work.
+- **Feed sections vs `tracks:`.** Triage every `###` section the feed has, whatever `tracks:` says; the names need not match. A section whose name starts with `watch:` is a watch track.
+- **One row per item.** An item that fits two lanes gets its row in the lane it moves most and a `citations` clause in the other lane's pickup block.
+- **No list, no CANDIDATE.** If the lane has no list the item could land on (no backlog, bake-off or decision note in `what_exists`), the verdict is `PARKED` with "no list in lane" as the reason.
+- **Hand-fetched evidence.** When `evidence.py` flags ⚠️ and you fetch the file yourself, save it next to the item's file as `<item file stem>.<what>.txt` (e.g. `hfmodel-org-model.LICENSE.txt`) so the row can cite it.
+- **Evidence is today's.** `evidence.py` fetches the state on the day you run it, not the feed week's: stars, `pushed_at` and arrivals counts drift. Write the fetch date in the scope line and do not explain the drift away.
 - **Say what you did not do.** Late triage: by how many days. Items not read: why. Evidence stripped by an HTML export: say so.
 
 ## Output
@@ -39,4 +44,4 @@ You are judging a week of new tech **relative to the lanes in `radar.yaml`**, no
 - `VERDICTS.md`: prepend the new section (newest first).
 - `pickup/<lane id>.md`: appended blocks.
 - `evidence/<date>/`: the fetched pages, one file per item.
-- Stdout: the triage log line and the "what moved" bullets, then the output of `python3 scripts/handoff.py --date <date> --dry-run` so the user sees every note that would land on a repo. Sending (the same command without `--dry-run`) is the user's call, not yours: it posts to other repos.
+- Stdout: the triage log line and the "what moved" bullets, then the output of `python3 scripts/handoff.py --date <date> --dry-run` so the user sees every note that would land on a repo. Sending (the same command without `--dry-run`) is the user's call, not yours: it posts to other repos. Before a real send, `VERDICTS.md` and `pickup/` must be committed and pushed: each note links to the section on `main`, and `handoff.py` refuses to send while they are uncommitted.

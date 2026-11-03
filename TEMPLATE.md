@@ -22,6 +22,8 @@ Not read, by description: …
 **Prices (if a price source is configured):** …
 ```
 
+**Triage log line:** "promoted A (of X)" — A = rows at `CANDIDATE` or stronger (`ALREADY` counts), X = items the feed *listed* for that source, not items read. `[+ W watch]` = watch-track items listed. A strike needs two consecutive zero-promotion triages; on the first triage on record write "no strike (first triage)".
+
 **Verdict vocabulary (fixed):** `ADOPTED` (in use) · `MOTIVATED` (a lane changed because of it) · `ALREADY` (we do this) · `CANDIDATE` (goes on a named list in a lane; may be `narrow`) · `PARKED` (correct lane, wrong time) · `NOT-ADOPT` (read, rejected, reason stated) · `WATCH` (unverified market or premise; one check before any outward sentence). Every verdict carries its evidence scope in brackets.
 
 **Pickup note per lane** (`pickup/<lane id>.md`, appended per triage; `scripts/handoff.py --date <triage date>` carries each block to the lane's repo, so keep the heading exact):
@@ -29,4 +31,7 @@ Not read, by description: …
 ```markdown
 ## <date> — from triage <date>
 - <item> → <what moves in this lane, one sentence> · reopen: <threshold> · evidence: <abstract | body | README+licence | run>
+- citations: <ALREADY and cite-only items, one clause each; omit the line if none>
 ```
+
+The whole block, citations included, is what `handoff.py` posts to the lane's repo.

@@ -15,3 +15,5 @@ Read before writing a verdict. Each trap has cost a wrong sentence at least once
 11. **Prices move both ways and revert.** A −78% on day one reverted on day three. Quote the change note, not the number, and say the date.
 12. **Memory is rank-F evidence.** A fact remembered from a previous session is unverified until a tool call this session shows it.
 13. **Tag matches are hints, not filters.** Title-keyword tags on the papers feed say where to look first; untagged items are still listed and still read by title.
+14. **Evidence is fetched today, not for the feed week.** Stars, `pushed_at` and even the arrivals count differ between the feed and the evidence file. Both are true on their own date; cite the date.
+15. **A clean leak gate without `leakgate.txt` checked secrets only.** The banned-terms list is git-ignored; on a fresh clone the full mode has nothing to ban. The gate now says so; read the line.

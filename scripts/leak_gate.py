@@ -115,6 +115,8 @@ def main(argv):
                 hits.append((f, n, pat, line.strip()[:100]))
 
     mode = "secrets-only" if secrets_only else "full"
+    if not secrets_only and not BUSINESS_RE:
+        print("⚠️  leak-gate: no leakgate.txt found — full mode checked secret shapes only, no banned terms", file=sys.stderr)
     if hits:
         print(f"🛑 leak-gate ({mode}): {len(hits)} hit(s) — DO NOT publish:\n")
         for f, n, pat, snippet in hits:

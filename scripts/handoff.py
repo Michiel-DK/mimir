@@ -16,6 +16,7 @@ Writes:  data/handoff/<triage date>.json   ledger: what was opened where (re-run
 Run:  python3 scripts/handoff.py --date 2026-11-03 --dry-run     # print every note, send nothing
       python3 scripts/handoff.py --date 2026-11-03               # open issues (or PRs) via `gh`
       python3 scripts/handoff.py --date 2026-11-03 --lane ticket-agent-evals
+      python3 scripts/handoff.py --date 2026-10-19 --dry-run --pickup-dir examples/2026-10-19/pickup   # demo on the shipped fixture
 
 radar.yaml:
     handoff:
@@ -23,6 +24,7 @@ radar.yaml:
       repos:                      # lane.repo label → GitHub owner/name; unmapped lanes are skipped, loudly
         support-agent: example-labs/support-agent
       pr_path: docs/pickup        # pr mode only: file lands at <pr_path>/<date>-<lane id>.md
+      verdicts_url: https://github.com/you/your-private-radar/blob/main/VERDICTS.md   # optional link target
       labels: [mimir]             # issue mode only, optional; labels must already exist on the repo
 
 Needs `gh` authenticated with write access to the target repos (locally: `gh auth status`;
@@ -114,6 +116,7 @@ def handoff_config(cfg: dict) -> dict:
         "pr_path": str(h.get("pr_path") or "docs/pickup").strip("/"),
         "labels": [str(x) for x in labels],
         "source": h.get("source"),  # optional: URL of this mimir repo for the link back
+        "verdicts_url": h.get("verdicts_url"),  # optional: where VERDICTS.md lives if not <source>/blob/main/VERDICTS.md
     }
 
 
@@ -153,14 +156,15 @@ def title_for(triage: str, lane_id: str) -> str:
     return f"mimir pickup {triage}: {lane_id}"
 
 
-def render_body(lane_id: str, lane: dict, block: dict, triage: str, src: str | None) -> str:
+def render_body(lane_id: str, lane: dict, block: dict, triage: str, src: str | None,
+                verdicts_url: str | None = None) -> str:
     q = str(lane.get("question", "")).strip()
     status = lane.get("status")
     head = [f"Pickup from mimir triage **{triage}**, lane `{lane_id}`" + (f" (status: {status})." if status else ".")]
     if q:
         head.append("")
         head.append(f"> {q}")
-    verdicts = f"{src}/blob/main/VERDICTS.md" if src else "VERDICTS.md in the mimir repo"
+    verdicts = verdicts_url or (f"{src}/blob/main/VERDICTS.md" if src else "VERDICTS.md next to the pickup notes")
     tail = [
         "---",
         f"Opened by mimir `scripts/handoff.py`. Verdict rows and evidence scope: {verdicts} (section {triage}).",
@@ -272,7 +276,19 @@ def save_ledger(path: Path, ledger: dict) -> None:
 
 # ----------------------------------------------------------------------------- main
 
-def handoff(cfg: dict, triage: str, *, dry_run: bool = False, only_lane: str | None = None,
+def uncommitted_outputs(run, pickup_dir: Path = PICKUP_DIR) -> list[str]:
+    """Porcelain lines for the pickup dir and the VERDICTS.md beside it (empty = committed or not a git checkout)."""
+    base = Path(pickup_dir).resolve().parent
+    try:
+        r = run(["git", "-C", str(base), "status", "--porcelain", "--", "VERDICTS.md", Path(pickup_dir).name])
+    except Exception:  # noqa: BLE001
+        return []
+    if r.returncode != 0:
+        return []
+    return [l for l in (r.stdout or "").splitlines() if l.strip()]
+
+
+def handoff(cfg: dict, triage: str, *, dry_run: bool = False, only_lane: str | None = None, allow_dirty: bool = False,
             pickup_dir: Path = PICKUP_DIR, ledger_dir: Path = LEDGER_DIR, run=default_run,
             out=print) -> dict:
     """Returns {'sent': [...], 'skipped': [...], 'unmapped': [...], 'none': bool}."""
@@ -284,6 +300,11 @@ def handoff(cfg: dict, triage: str, *, dry_run: bool = False, only_lane: str | N
         out(f"[handoff] no pickup block from triage {triage}" + (f" in lane {only_lane}" if only_lane else "") + "; nothing to hand off")
         return result
 
+    if not dry_run and not allow_dirty:
+        dirty = uncommitted_outputs(run, pickup_dir)
+        if dirty:
+            raise SystemExit("handoff: VERDICTS.md / pickup/ have uncommitted changes; the notes link to main. "
+                             "Commit and push first, or pass --allow-dirty:\n  " + "\n  ".join(dirty))
     ledger_path = ledger_dir / f"{triage}.json"
     ledger = load_ledger(ledger_path)
     src = source_url(hcfg, run)
@@ -305,7 +326,7 @@ def handoff(cfg: dict, triage: str, *, dry_run: bool = False, only_lane: str | N
             continue
 
         title = title_for(triage, lane_id)
-        body = render_body(lane_id, lane, block, triage, src)
+        body = render_body(lane_id, lane, block, triage, src, hcfg.get("verdicts_url"))
         branch = f"mimir/pickup-{triage}-{lane_id}"
         rel_path = f"{hcfg['pr_path']}/{triage}-{lane_id}.md"
 
@@ -356,6 +377,11 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--date", required=True, help="triage date whose pickup blocks to hand off (YYYY-MM-DD)")
     ap.add_argument("--lane", help="only this lane id")
     ap.add_argument("--dry-run", action="store_true", help="print every note, send nothing, write no ledger")
+    ap.add_argument("--allow-dirty", action="store_true", help="send even if VERDICTS.md / pickup/ are uncommitted")
+    ap.add_argument("--pickup-dir", type=Path, default=PICKUP_DIR,
+                    help="read pickup/<lane>.md blocks from here instead of the repo's pickup/ (demos, tests)")
+    ap.add_argument("--ledger-dir", type=Path, default=LEDGER_DIR,
+                    help="write the sent-ledger here instead of data/handoff/")
     a = ap.parse_args(argv)
     try:
         date.fromisoformat(a.date)
@@ -368,7 +394,8 @@ def main(argv: list[str] | None = None) -> int:
         print("handoff: no radar.yaml found (set RADAR_YAML or copy radar.example.yaml)", file=sys.stderr)
         return 1
     try:
-        res = handoff(cfg, a.date, dry_run=a.dry_run, only_lane=a.lane)
+        res = handoff(cfg, a.date, dry_run=a.dry_run, only_lane=a.lane, allow_dirty=a.allow_dirty,
+                      pickup_dir=a.pickup_dir, ledger_dir=a.ledger_dir)
     except SystemExit as e:
         if e.code and not isinstance(e.code, int):
             print(e.code, file=sys.stderr)

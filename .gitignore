@@ -4,3 +4,5 @@ leakgate.txt
 leakgate.allow.txt
 evidence/*/
 !evidence/.gitkeep
+radar.yaml
+.claude/

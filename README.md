@@ -6,8 +6,14 @@ Paper bots and trending feeds tell you what is new. Mimir tells you what, if any
 *your* lanes, and when to look again. The output nobody else ships is the row that says
 `PARKED — reopen when the laptop tier is memory-bound at 4k prompts`.
 
-Named after the counsellor Odin consults before deciding. Status: **v0**, extracted from a private
-radar the author has run daily since mid-2026.
+Named after the counsellor Odin consults before deciding. Status: **v0**.
+
+**This is a public rework of a private project.** The author has run a private radar daily since
+mid-2026. This repo is that radar re-cut so that anyone with a `radar.yaml` can reproduce the
+judgement. The author's real profile, verdicts and pickup notes stay in a private repo; what ships
+here is a fictional profile (`radar.example.yaml`), one real week of feed, and one fresh agent's
+unedited run of the skill on that week (`examples/2026-10-19/`). `VERDICTS.md` and `pickup/` at the
+root are empty on purpose: they are where *your* triage writes.
 
 ## How it works
 
@@ -46,7 +52,10 @@ fetchers    ─┘                 │
 5. **Hand off.** `python3 scripts/handoff.py --date <triage date>` carries each new block to the
    lane's own repo: one issue per lane by default (a reading note, with the lane's question and a
    link back to the verdict section), or a docs file on a dated branch as a PR. `--dry-run` prints
-   every note first. A ledger under `data/handoff/` makes re-runs open nothing twice, and the
+   every note first. Commit and push `VERDICTS.md` and `pickup/` before the real send: each note
+   links to the section on `main` (or to `handoff.verdicts_url` if your verdicts live in another repo),
+   and the script refuses to send while they are uncommitted. `--pickup-dir` points it at a pickup
+   folder outside this checkout, e.g. a private radar repo. A ledger under `data/handoff/` makes re-runs open nothing twice, and the
    leak gate runs on every body before it leaves the machine. The agent working in that repo
    finds the note where it works, not here.
 
@@ -66,9 +75,10 @@ python3 scripts/fetch_papers.py            # weekly; OPENALEX_API_KEY optional
 python3 scripts/arrivals.py --since <day after your last triage>          # → data/arrivals/<date>.md
 #   in your agent: "run skills/radar-triage on the newest PAPERS.md section + data/arrivals/<date>.md"
 python3 scripts/handoff.py --date <date> --dry-run   # then without --dry-run: one issue per moved lane, on its repo
+python3 scripts/handoff.py --date 2026-10-19 --dry-run --pickup-dir examples/2026-10-19/pickup   # hand-off on the shipped run, no agent needed
 
 # the skill cites evidence it fetched; this does the fetching and the licence walk:
-python3 scripts/evidence.py 2610.18813 hf:org/model owner/repo https://huggingface.co/blog/...
+python3 scripts/evidence.py --date <date> 2610.18813 hf:org/model owner/repo https://huggingface.co/blog/...
 
 python3 -m unittest discover -s tests      # no network
 ```
