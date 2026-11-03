@@ -22,6 +22,10 @@ fetchers    ─┘                 │
                  ▼                           ▼
             VERDICTS.md                pickup/<lane>.md
    (dated sections, newest first)   (one note per lane an agent can act on)
+                                             │
+                                             ▼
+                                   scripts/handoff.py
+                                 (one issue or docs PR per lane, on that lane's repo)
 ```
 
 1. **Profile.** `radar.yaml` holds your *lanes*: one per question you are actually working or have
@@ -37,8 +41,14 @@ fetchers    ─┘                 │
    cites a saved artefact, abstract-only reads are labelled, licence files are read at every tree
    depth before any verdict stronger than PARKED, every verdict carries a reopen threshold, and
    nothing is cloned or run unless you say so.
-4. **Pick up.** Each lane that moved gets a block in `pickup/<lane>.md`. Hand that to the agent
-   working in that repo. Triage opens no work by itself.
+4. **Pick up.** Each lane that moved gets a block in `pickup/<lane>.md`. Triage opens no work by
+   itself.
+5. **Hand off.** `python3 scripts/handoff.py --date <triage date>` carries each new block to the
+   lane's own repo: one issue per lane by default (a reading note, with the lane's question and a
+   link back to the verdict section), or a docs file on a dated branch as a PR. `--dry-run` prints
+   every note first. A ledger under `data/handoff/` makes re-runs open nothing twice, and the
+   leak gate runs on every body before it leaves the machine. The agent working in that repo
+   finds the note where it works, not here.
 
 ## Quickstart
 
@@ -55,6 +65,7 @@ python3 scripts/fetch_trending.py && python3 scripts/compute_trends.py   # daily
 python3 scripts/fetch_papers.py            # weekly; OPENALEX_API_KEY optional
 python3 scripts/arrivals.py --since <day after your last triage>          # → data/arrivals/<date>.md
 #   in your agent: "run skills/radar-triage on the newest PAPERS.md section + data/arrivals/<date>.md"
+python3 scripts/handoff.py --date <date> --dry-run   # then without --dry-run: one issue per moved lane, on its repo
 
 # the skill cites evidence it fetched; this does the fetching and the licence walk:
 python3 scripts/evidence.py 2610.18813 hf:org/model owner/repo https://huggingface.co/blog/...
@@ -92,6 +103,9 @@ were written down before the runs.
 - arXiv is read through OpenAlex because arXiv's own API throttles CI runners.
 - There is no hosted service, dashboard, memory graph or autonomous digest, and none is planned.
 - Cost is roughly one agent session per week. Fetching is free.
+- The hand-off is deterministic and runs after the session: it posts what the agent wrote, it does
+  not judge. It needs `gh` with write access to the lanes' repos; `.github/workflows/handoff.yml`
+  is a manual trigger for the same step, dry-run by default.
 - Leak gate: `scripts/leak_gate.py` blocks a publish on secret shapes and on your own banned terms.
   Run it on anything that leaves the repo.
 
@@ -105,6 +119,7 @@ scripts/fetch_papers.py     HF blog + arXiv (OpenAlex) by track → PAPERS.md se
 scripts/fetch_problems.py   demand signals (best effort) → data/problems/
 scripts/arrivals.py         true arrivals over a window → data/arrivals/<date>.md  (triage input 2)
 scripts/evidence.py         arXiv / HF model / HF blog / GitHub + licence-at-every-depth → evidence/<date>/
+scripts/handoff.py          pickup blocks → one issue / docs PR per lane on the lane's repo; ledger in data/handoff/
 scripts/leak_gate.py        blocks secrets and your banned terms (leakgate.txt) before a push
 scripts/radar_config.py     the loader every fetcher reads radar.yaml through
 skills/radar-triage/    the triage procedure and its non-optional rules

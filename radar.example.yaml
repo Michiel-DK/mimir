@@ -11,6 +11,16 @@ sources:
   arxiv_via_openalex: {source: "S4306400194", field: "fields/17"}
   hn_problems: {phrases: ["I wish there was", "is there a tool", "someone should build", "doing this manually"]}
 
+handoff:
+  # After a triage, `python3 scripts/handoff.py --date <date>` carries each lane's new pickup block
+  # to the lane's repo. `repos` maps the short label in lanes[].repo to the GitHub owner/name.
+  # A lane whose label is not here is skipped with a warning. Run with --dry-run first.
+  mode: issue                      # issue (one reading-note issue per lane) | pr (a docs file on a dated branch)
+  repos:
+    support-agent: example-labs/support-agent
+  labels: [mimir]                  # issue mode; the labels must already exist on the repo
+  pr_path: docs/pickup             # pr mode: <pr_path>/<date>-<lane id>.md
+
 tracks:
   "agents": '"agent harness" OR "agent evaluation" OR "long-horizon agent" OR "tool use"'
   "serving": '"LLM inference" OR "KV cache" OR "speculative decoding"'

@@ -21,7 +21,7 @@ You are judging a week of new tech **relative to the lanes in `radar.yaml`**, no
 4. **Verdict** from the fixed vocabulary. A `CANDIDATE` lands on one of the lane's `lists` (name it in the row); an `ALREADY` or cite-only item goes to the lane's pickup note under `citations`; an item from a track marked `watch` with no lane is listed once under "Skipped by title" with "watch track, no lane", with evidence scope in brackets: `(abstract)`, `(body read)`, `(post read; benchmarks are the vendor's)`, `(README + licence files, not run)`. A `CANDIDATE` must land on a list that exists in a lane (a bake-off list, a decision note, a case backlog). `narrow` means it matters only after a stated precondition.
 5. **Reopen threshold** on every row: a concrete event, not a date. Prefer the lane's own `reopen_when` phrasing.
 6. **Counts and kill clause.** Count promotions per source (promoted = CANDIDATE or stronger). A source with two consecutive triages at zero promotions gets a strike; state strike / no strike per source in the triage log line.
-7. **Pickup notes.** For each lane that received a row stronger than PARKED, append a block to `pickup/<lane id>.md` in the TEMPLATE shape. Lanes with nothing get nothing.
+7. **Pickup notes.** For each lane that received a row stronger than PARKED, append a block to `pickup/<lane id>.md` in the TEMPLATE shape. Lanes with nothing get nothing. The heading must be exactly `## <date> — from triage <date>`: `scripts/handoff.py` finds blocks by it.
 8. **"What moved" summary**, at most eight bullets, lane-first, placed in the triage log. Say explicitly when the priority order across lanes is unchanged.
 
 ## Rules that are not optional
@@ -39,4 +39,4 @@ You are judging a week of new tech **relative to the lanes in `radar.yaml`**, no
 - `VERDICTS.md`: prepend the new section (newest first).
 - `pickup/<lane id>.md`: appended blocks.
 - `evidence/<date>/`: the fetched pages, one file per item.
-- Stdout: the triage log line and the "what moved" bullets.
+- Stdout: the triage log line and the "what moved" bullets, then the output of `python3 scripts/handoff.py --date <date> --dry-run` so the user sees every note that would land on a repo. Sending (the same command without `--dry-run`) is the user's call, not yours: it posts to other repos.

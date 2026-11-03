@@ -24,7 +24,7 @@ Not read, by description: …
 
 **Verdict vocabulary (fixed):** `ADOPTED` (in use) · `MOTIVATED` (a lane changed because of it) · `ALREADY` (we do this) · `CANDIDATE` (goes on a named list in a lane; may be `narrow`) · `PARKED` (correct lane, wrong time) · `NOT-ADOPT` (read, rejected, reason stated) · `WATCH` (unverified market or premise; one check before any outward sentence). Every verdict carries its evidence scope in brackets.
 
-**Pickup note per lane** (`pickup/<lane id>.md`, appended per triage):
+**Pickup note per lane** (`pickup/<lane id>.md`, appended per triage; `scripts/handoff.py --date <triage date>` carries each block to the lane's repo, so keep the heading exact):
 
 ```markdown
 ## <date> — from triage <date>
