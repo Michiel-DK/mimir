@@ -2,9 +2,9 @@ name: weekly-papers
 # HF blog + arXiv (via OpenAlex) for the tracks in radar.yaml → a new dated section at the top of
 # PAPERS.md, plus the week's GitHub-trending ARRIVALS (data/arrivals/<date>.md) from the daily snapshots. The triage itself is run by your agent with skills/radar-triage, not by this workflow.
 # Kill clause per source: two consecutive triages promoting nothing from a source → drop it.
+# No schedule here: the public repo is the tool. Tracking runs in the author's private instance;
+# run this by hand to refresh the example, or add your own `schedule:` in your fork.
 on:
-  schedule:
-    - cron: "30 6 * * 1"
   workflow_dispatch:
     inputs:
       dry_run: {description: "Print the section, commit nothing", type: boolean, default: false}
