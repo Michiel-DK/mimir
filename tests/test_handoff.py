@@ -43,8 +43,9 @@ CFG = {
 class FakeRun:
     """Stands in for subprocess.run. Records commands; answers gh queries from `issues`/`prs`."""
 
-    def __init__(self, issues=None, prs=None, fail_on=None):
+    def __init__(self, issues=None, prs=None, fail_on=None, private=None):
         self.calls = []
+        self.private = private or {}  # repo → True / False; missing = lookup fails
         self.issues = issues or {}   # repo → [{"title","url"}]
         self.prs = prs or {}         # (repo, branch) → url
         self.fail_on = fail_on       # substring of a command that should fail
@@ -58,6 +59,10 @@ class FakeRun:
         if cmd[:2] == ["gh", "issue"] and cmd[2] == "list":
             repo = cmd[cmd.index("--repo") + 1]
             return subprocess.CompletedProcess(cmd, 0, json.dumps(self.issues.get(repo, [])), "")
+        if cmd[:3] == ["gh", "repo", "view"]:
+            if cmd[3] not in self.private:
+                return subprocess.CompletedProcess(cmd, 1, "", "not found")
+            return subprocess.CompletedProcess(cmd, 0, "true\n" if self.private[cmd[3]] else "false\n", "")
         if cmd[:2] == ["gh", "issue"] and cmd[2] == "create":
             return subprocess.CompletedProcess(cmd, 0, "https://github.com/x/y/issues/7\n", "")
         if cmd[:2] == ["gh", "pr"] and cmd[2] == "list":
@@ -151,6 +156,51 @@ class RenderTests(unittest.TestCase):
         run = FakeRun()
         self.assertEqual(handoff.source_url({"source": None}, run), "https://github.com/example-labs/mimir")
         self.assertEqual(handoff.source_url({"source": "https://x/y/"}, run), "https://x/y")
+
+
+PRIVATE_CFG = {**CFG, "handoff": {**CFG["handoff"], "private_only": True}}
+
+
+class PrivateOnlyTests(unittest.TestCase):
+    def _send(self, private):
+        t, pick, ledger = _env({"ticket-agent-evals": PICKUP_A})
+        with t:
+            run = FakeRun(private=private)
+            res = handoff.handoff(PRIVATE_CFG, "2026-11-03", pickup_dir=pick, ledger_dir=ledger, run=run, out=lambda *_: None)
+            creates = [c for c in run.calls if c[:3] == ["gh", "issue", "create"]]
+            return res, creates, (ledger / "2026-11-03.json").exists()
+
+    def test_public_repo_is_refused(self):
+        res, creates, wrote = self._send({"example-labs/support-agent": False})
+        self.assertEqual(res["refused"], ["ticket-agent-evals"]); self.assertEqual(creates, []); self.assertFalse(wrote)
+
+    def test_unreadable_visibility_is_refused(self):
+        res, creates, _ = self._send({})
+        self.assertEqual(res["refused"], ["ticket-agent-evals"]); self.assertEqual(creates, [])
+
+    def test_private_repo_is_sent(self):
+        res, creates, wrote = self._send({"example-labs/support-agent": True})
+        self.assertEqual(res["sent"], ["ticket-agent-evals"]); self.assertEqual(len(creates), 1); self.assertTrue(wrote)
+
+    def test_allow_public_exempts_a_named_repo(self):
+        cfg = {**CFG, "handoff": {**CFG["handoff"], "private_only": True, "allow_public": ["example-labs/support-agent"]}}
+        t, pick, ledger = _env({"ticket-agent-evals": PICKUP_A})
+        with t:
+            run = FakeRun(private={"example-labs/support-agent": False})
+            res = handoff.handoff(cfg, "2026-11-03", pickup_dir=pick, ledger_dir=ledger, run=run, out=lambda *_: None)
+            self.assertEqual(res["sent"], ["ticket-agent-evals"])
+            self.assertFalse(any(c[:3] == ["gh", "repo", "view"] for c in run.calls))
+
+    def test_private_only_must_be_bool(self):
+        with self.assertRaises(SystemExit):
+            handoff.handoff_config({"handoff": {**CFG["handoff"], "private_only": "yes"}})
+
+    def test_off_by_default_makes_no_visibility_call(self):
+        t, pick, ledger = _env({"ticket-agent-evals": PICKUP_A})
+        with t:
+            run = FakeRun()
+            handoff.handoff(CFG, "2026-11-03", pickup_dir=pick, ledger_dir=ledger, run=run, out=lambda *_: None)
+            self.assertFalse(any(c[:3] == ["gh", "repo", "view"] for c in run.calls))
 
 
 class IssueModeTests(unittest.TestCase):

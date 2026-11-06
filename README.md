@@ -78,6 +78,7 @@ cp radar.example.yaml radar.yaml           # then edit, or run skills/radar-prof
 # your own feed, from the second week on:
 python3 scripts/fetch_trending.py && python3 scripts/compute_trends.py   # daily (or let daily.yml run it)
 python3 scripts/fetch_papers.py            # weekly; OPENALEX_API_KEY optional
+python3 scripts/fetch_feeds.py             # weekly, after fetch_papers; reads sources.feeds / pages / problems_digest
 python3 scripts/arrivals.py --since <day after your last triage>          # → data/arrivals/<date>.md
 #   in your agent: "run skills/radar-triage on the newest PAPERS.md section + data/arrivals/<date>.md"
 python3 scripts/handoff.py --date <date> --dry-run   # then without --dry-run: one issue per moved lane, on its repo
@@ -132,6 +133,7 @@ radar.yaml              your profile (git-ignored by choice; radar.example.yaml 
 scripts/fetch_trending.py   GitHub trending → data/daily/<date>.jsonl (+ .meta.json coverage)
 scripts/compute_trends.py   daily diff: newcomers / climbers / persisters, rolling top-N
 scripts/fetch_papers.py     HF blog + arXiv (OpenAlex) by track → PAPERS.md section
+scripts/fetch_feeds.py      any RSS/Atom feed, a watched page's diff, the HN problems digest → extra `###` sections in the same PAPERS.md block
 scripts/fetch_problems.py   demand signals (best effort) → data/problems/
 scripts/arrivals.py         true arrivals over a window → data/arrivals/<date>.md  (triage input 2)
 scripts/evidence.py         arXiv / HF model / HF blog / GitHub + licence-at-every-depth → evidence/<date>/

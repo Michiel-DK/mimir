@@ -24,8 +24,8 @@ Computer Science field), stemmed search (so "harness" also matches "harnessing")
 ranked by relevance instead of newest first.
 
 House rules baked in:
-  - Caps are hard — an uncapped feed is an unread inbox (BUILD_TRACK ground rule).
-  - This file is the CANDIDATE list. Promotion into BUILD_TRACK.md's resource inbox is a
+  - Caps are hard — an uncapped feed is an unread inbox.
+  - This file is the CANDIDATE list. Promotion into a lane (VERDICTS.md, pickup/) is a
     manual, human triage act — never automated.
   - KILL CLAUSE, PER SOURCE (re-registered 2026-09-23): two consecutive weekly triages
     promoting nothing from a source → drop that source. Both dead → delete the workflow
@@ -63,7 +63,7 @@ ARXIV_SOURCE = "S4306400194"  # OpenAlex source id for arXiv (Cornell University
 CS_FIELD = "fields/17"        # Computer Science: stands in for the old cs.* category filters
 
 # track → OpenAlex title+abstract search (boolean OR, quoted phrases). Tracks mirror
-# BUILD_TRACK's queue + the two watch-trends named 2026-08-10 (mid-training, self-hosted inference).
+# the build queue + two watch-trends (mid-training, self-hosted inference); radar.yaml `tracks:` overrides them.
 import radar_config
 DEFAULT_TRACKS = {
     "agents": '"agent harness" OR "agent evaluation" OR "long-horizon agent" OR "self-improving agent"',

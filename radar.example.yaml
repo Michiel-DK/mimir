@@ -10,6 +10,12 @@ sources:
   hf_blog: {feed: "https://huggingface.co/blog/feed.xml"}
   arxiv_via_openalex: {source: "S4306400194", field: "fields/17"}
   hn_problems: {phrases: ["I wish there was", "is there a tool", "someone should build", "doing this manually"]}
+  # Optional, read by scripts/fetch_feeds.py: a platform your lanes depend on, and its prices.
+  # feeds:
+  #   - {section: "platform releases", name: "vendor releases", url: "https://github.com/<org>/<repo>/releases.atom"}
+  # pages:
+  #   - {section: "pricing changes", name: "vendor pricing", url: "https://<vendor>/pricing", keep: "[$€£]|per month"}
+  # problems_digest: {section: "HN problems", dir: "data/problems", days: 7, max: 25}
 
 handoff:
   # After a triage, `python3 scripts/handoff.py --date <date>` carries each lane's new pickup block

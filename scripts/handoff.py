@@ -26,6 +26,8 @@ radar.yaml:
       pr_path: docs/pickup        # pr mode only: file lands at <pr_path>/<date>-<lane id>.md
       verdicts_url: https://github.com/you/your-private-radar/blob/main/VERDICTS.md   # optional link target
       labels: [mimir]             # issue mode only, optional; labels must already exist on the repo
+      private_only: true          # optional: send only to repos GitHub reports as private (checked per send)
+      allow_public: [you/public-only-repo]   # optional: repos exempt from private_only (a lane with no private repo)
 
 Needs `gh` authenticated with write access to the target repos (locally: `gh auth status`;
 in Actions: a token with issues/contents/pull-requests write on those repos). Every body
@@ -110,11 +112,19 @@ def handoff_config(cfg: dict) -> dict:
     labels = h.get("labels") or []
     if not isinstance(labels, list):
         raise SystemExit("handoff: `handoff.labels` must be a list")
+    private_only = h.get("private_only", False)
+    if not isinstance(private_only, bool):
+        raise SystemExit(f"handoff: `handoff.private_only` must be true or false, got {private_only!r}")
+    allow_public = h.get("allow_public") or []
+    if not isinstance(allow_public, list):
+        raise SystemExit("handoff: `handoff.allow_public` must be a list of owner/name")
     return {
+        "allow_public": [str(x) for x in allow_public],
         "mode": mode,
         "repos": repos,
         "pr_path": str(h.get("pr_path") or "docs/pickup").strip("/"),
         "labels": [str(x) for x in labels],
+        "private_only": private_only,  # pickup notes name internal lanes; refuse repos not confirmed private
         "source": h.get("source"),  # optional: URL of this mimir repo for the link back
         "verdicts_url": h.get("verdicts_url"),  # optional: where VERDICTS.md lives if not <source>/blob/main/VERDICTS.md
     }
@@ -174,6 +184,15 @@ def render_body(lane_id: str, lane: dict, block: dict, triage: str, src: str | N
 
 
 # ----------------------------------------------------------------------------- gh plumbing
+
+def repo_is_private(repo: str, run) -> bool | None:
+    """True / False from GitHub, None when the lookup fails (treated as not private: fail closed)."""
+    r = run(["gh", "repo", "view", repo, "--json", "isPrivate", "-q", ".isPrivate"])
+    if r.returncode != 0:
+        return None
+    v = (r.stdout or "").strip().lower()
+    return True if v == "true" else False if v == "false" else None
+
 
 def default_run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, text=True, capture_output=True, **kw)
@@ -296,7 +315,7 @@ def handoff(cfg: dict, triage: str, *, dry_run: bool = False, only_lane: str | N
     hcfg = handoff_config(cfg)
     lanes = lanes_by_id(cfg)
     blocks = blocks_for(pickup_dir, triage, only_lane)
-    result = {"sent": [], "skipped": [], "unmapped": [], "none": not blocks}
+    result = {"sent": [], "skipped": [], "unmapped": [], "refused": [], "none": not blocks}
     if not blocks:
         out(f"[handoff] no pickup block from triage {triage}" + (f" in lane {only_lane}" if only_lane else "") + "; nothing to hand off")
         return result
@@ -325,6 +344,14 @@ def handoff(cfg: dict, triage: str, *, dry_run: bool = False, only_lane: str | N
             out(f"[handoff] {lane_id} → {repo}: already handed off ({ledger[lane_id].get('url', '?')}); skipped")
             result["skipped"].append(lane_id)
             continue
+
+        if hcfg["private_only"] and repo not in hcfg["allow_public"]:
+            private = repo_is_private(repo, run)
+            if private is not True:
+                why = "is public" if private is False else "visibility could not be read"
+                out(f"::warning::[handoff] lane `{lane_id}` → {repo}: {why}; private_only is set, not sent")
+                result["refused"].append(lane_id)
+                continue
 
         title = title_for(triage, lane_id)
         body = render_body(lane_id, lane, block, triage, src, hcfg.get("verdicts_url"))
@@ -365,7 +392,7 @@ def handoff(cfg: dict, triage: str, *, dry_run: bool = False, only_lane: str | N
         result["sent"].append(lane_id)
 
     out(f"[handoff] {triage}: {len(result['sent'])} {'would be ' if dry_run else ''}sent, "
-        f"{len(result['skipped'])} already done, {len(result['unmapped'])} unmapped")
+        f"{len(result['skipped'])} already done, {len(result['unmapped'])} unmapped, {len(result['refused'])} refused (not private)")
     return result
 
 
