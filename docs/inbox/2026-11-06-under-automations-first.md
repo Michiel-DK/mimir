@@ -1,0 +1,13 @@
+# mimir under automations-first (6 Nov 2026)
+
+> STATUS: working-note, pointer. Written 2026-11-06 from `roger3000-hq/strategy/automations-first-repo-plan-2026-11-06.md` (private hq repo). Verb for this repo: **code, small**.
+> Verbs: code = takes commits · freeze = no commits, stays as is · write-up = one public page, then freeze · archive = GitHub archive flag · leave = concept, nothing to do.
+
+## What this repo is now
+The one public agent repo: bounded triage of incoming papers, launch posts and trending repos against a profile, each verdict with a reopen threshold, a person signs. It is linked from the roger3000 site's "Work in the open" row.
+
+## Next steps, in order
+1. Leak gate: a check that nothing from the private profile or private verdicts can reach this tree.
+2. The eight profile gaps noted in the private radar hand-off of 3 Nov.
+3. A stranger's clone: someone who has not seen the private radar runs the skill on the example week and gets a sensible VERDICTS.md.
+Then stop; v0 is published when 3 passes.
