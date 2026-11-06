@@ -16,6 +16,7 @@ Usage
 -----
     python3 scripts/leak_gate.py <path> [<path> ...]
     python3 scripts/leak_gate.py --secrets-only data/daily
+    python3 scripts/leak_gate.py --terms=leakgate.example.txt <path>   # CI: alternate banned-term list
 
 Exit 0 = clean. Exit 1 = at least one hit (do not publish). Stdlib only.
 """
@@ -93,12 +94,16 @@ def scan_line(line, patterns):
 
 def main(argv):
     secrets_only = "--secrets-only" in argv
+    terms = next((a.split("=", 1)[1] for a in argv if a.startswith("--terms=")), None)
     paths = [a for a in argv if not a.startswith("--")]
     if not paths:
         print("usage: leak_gate.py [--secrets-only] <path> [<path> ...]",
               file=sys.stderr)
         return 2
-    patterns = SECRETS_RE if secrets_only else SECRETS_RE + BUSINESS_RE
+    business_re = BUSINESS_RE
+    if terms:  # CI uses the public example list; the real one never leaves the private machine
+        business_re = [re.compile(p, re.IGNORECASE) for p in _load_patterns(terms)]
+    patterns = SECRETS_RE if secrets_only else SECRETS_RE + business_re
     hits, scanned = [], 0
     for f in iter_files(paths):
         if f.name in SKIP_FILES or f.suffix.lower() not in TEXT_SUFFIXES:
@@ -115,8 +120,8 @@ def main(argv):
                 hits.append((f, n, pat, line.strip()[:100]))
 
     mode = "secrets-only" if secrets_only else "full"
-    if not secrets_only and not BUSINESS_RE:
-        print("⚠️  leak-gate: no leakgate.txt found — full mode checked secret shapes only, no banned terms", file=sys.stderr)
+    if not secrets_only and not business_re:
+        print("⚠️  leak-gate: no banned-term list loaded — full mode checked secret shapes only", file=sys.stderr)
     if hits:
         print(f"🛑 leak-gate ({mode}): {len(hits)} hit(s) — DO NOT publish:\n")
         for f, n, pat, snippet in hits:

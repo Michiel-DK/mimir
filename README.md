@@ -133,7 +133,9 @@ were written down before the runs.
   not judge. It needs `gh` with write access to the lanes' repos; `.github/workflows/handoff.yml`
   is a manual trigger for the same step, dry-run by default.
 - Leak gate: `scripts/leak_gate.py` blocks a publish on secret shapes and on your own banned terms.
-  Run it on anything that leaves the repo.
+  Run it on anything that leaves the repo. It also runs in CI (`.github/workflows/leak-gate.yml`) on
+  every push and pull request over all tracked files, using the secret shapes plus
+  `leakgate.example.txt`; your real `leakgate.txt` is git-ignored and stays on your machine.
 
 ## Layout
 
