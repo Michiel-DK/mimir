@@ -15,6 +15,8 @@ sources:
   #   - {section: "platform releases", name: "vendor releases", url: "https://github.com/<org>/<repo>/releases.atom"}
   # pages:
   #   - {section: "pricing changes", name: "vendor pricing", url: "https://<vendor>/pricing", keep: "[$€£]|per month"}
+  # A `pages` entry whose section is "pricing changes" is the profile's price source. With none,
+  # the triage drops the Prices line from TEMPLATE.md instead of guessing prices.
   # problems_digest: {section: "HN problems", dir: "data/problems", days: 7, max: 25}
 
 handoff:
@@ -29,6 +31,9 @@ handoff:
   pr_path: docs/pickup             # pr mode: <pr_path>/<date>-<lane id>.md
   # verdicts_url: https://github.com/you/private-radar/blob/main/VERDICTS.md   # if your verdicts live elsewhere
 
+# Every track either matches a lane (its query uses that lane's glossary) or is a watch track:
+# a name starting with "watch:" has no lane, so the triage lists its items once under
+# "Skipped by title" as "watch track, no lane" and never promotes them.
 tracks:
   "agents": '"agent harness" OR "agent evaluation" OR "long-horizon agent" OR "tool use"'
   "serving": '"LLM inference" OR "KV cache" OR "speculative decoding"'
@@ -38,6 +43,12 @@ tags:
   "agents": "\\bagents?\\b|agentic|harness|tool"
   "serving": "inference|quantiz|serving|latency|gpu|llama\\.cpp"
 
+# Every lane needs what_exists (the triage's "where we have it" cell quotes it) and at least one
+# entry in lists (a CANDIDATE must land on a named list, else it is PARKED "no list in lane").
+# There is no citations key: ALREADY and cite-only items go on the "citations:" line of the
+# lane's pickup/<lane id>.md block (see TEMPLATE.md).
+# Write a number behind every reopen_when that implies one: licence (which licences count as
+# permissive, and whether revenue-capped ones do), size (parameters), cost ($ per unit of work).
 lanes:
   - id: ticket-agent-evals
     repo: support-agent
@@ -64,7 +75,7 @@ lanes:
       - "a self-hosted gateway with per-key budgets, usage rows per attempt, fallback routing and OpenTelemetry, under Apache-2.0 / MIT / BSD (revenue-capped licences do not count)"
       - "a documented failure mode in a candidate gateway (rate limits, cooldowns, tenant isolation, cost attribution)"
     not_now: [hosted gateways, engine-side routers]
-    candidates:
+    candidates:                    # third-party items already on a list; name + since, so a re-release is recognisable
       - {name: "gateway A", since: "2026-09-01"}
       - {name: "gateway B", since: "2026-09-15"}
 
@@ -78,7 +89,10 @@ lanes:
     reopen_when:
       - "an open model ≤ 35B total or ≤ 4B active with tool-use claims under Apache-2.0 / MIT; a revenue-capped or use-restricted licence is PARKED until its text is read"
       - "a KV-cache or serving change that moves laptop latency on consumer hardware"
+      - "a hosted open model at ≤ $2.00 per 10k tickets at list price that passes the 4 case families"
     not_now: [models > 100B, image/video models]
+    candidates:                    # models carry size too: a same-name release at another size or date is a new item
+      - {name: "open model C", size: "12B total / 2B active", since: "2026-09-20"}
 
   - id: harness
     repo: dev-harness

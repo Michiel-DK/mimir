@@ -34,14 +34,19 @@ You are judging a week of new tech **relative to the lanes in `radar.yaml`**, no
 - **No builds.** Triage opens nothing. A row can say what a lane should add to a list; it cannot start work.
 - **Feed sections vs `tracks:`.** Triage every `###` section the feed has, whatever `tracks:` says; the names need not match. A section whose name starts with `watch:` is a watch track.
 - **One row per item.** An item that fits two lanes gets its row in the lane it moves most and a `citations` clause in the other lane's pickup block.
+- **No `what_exists`, no inference.** If a lane lacks `what_exists`, the "where we have it" cell says "lane has no what_exists" and the item is not promoted on it; do not rebuild the sentence from `question`.
+- **Bars are binding.** When a `reopen_when` states a number (licence class, parameter count, cost per unit), an item that misses it is not `CANDIDATE`, and one whose number you could not find carries ⚠️ UNVERIFIED and stays `PARKED`. A `reopen_when` that implies a bar but states none ("cheap", "small", "permissive") goes in "What radar.yaml was missing".
+- **Re-releases.** Before a row, check the lane's `candidates` by name, size and `since`. A same-name item at another size or a later date is a re-release: say which entry it supersedes. An item matching an entry exactly is not new and gets no row.
 - **No list, no CANDIDATE.** If the lane has no list the item could land on (no backlog, bake-off or decision note in `what_exists`), the verdict is `PARKED` with "no list in lane" as the reason.
 - **Hand-fetched evidence.** When `evidence.py` flags ⚠️ and you fetch the file yourself, save it next to the item's file as `<item file stem>.<what>.txt` (e.g. `hfmodel-org-model.LICENSE.txt`) so the row can cite it.
 - **Evidence is today's.** `evidence.py` fetches the state on the day you run it, not the feed week's: stars, `pushed_at` and arrivals counts drift. Write the fetch date in the scope line and do not explain the drift away.
+- **Count from the file.** X in "promoted A (of X)" is the number of item lines in the feed section, counted; never the number in the section's header. If the two differ, write both.
+- **Prices only with a price source.** Write the Prices line only when the feed has a `pricing changes` section (a `sources.pages` entry in the profile). Without one, drop the line; do not fill it from memory.
 - **Say what you did not do.** Late triage: by how many days. Items not read: why. Evidence stripped by an HTML export: say so.
 
 ## Output
 
-- `VERDICTS.md`: prepend the new section (newest first).
+- `VERDICTS.md`: prepend the new section (newest first). End it with a "What radar.yaml was missing" paragraph: each field whose absence produced an inferred cell, a PARKED-for-no-list, or an unbarred `reopen_when`, by lane id. Write "nothing" if nothing was. `radar-profile` reads this paragraph.
 - `pickup/<lane id>.md`: appended blocks.
 - `evidence/<date>/`: the fetched pages, one file per item.
 - Stdout: the triage log line and the "what moved" bullets, then the output of `python3 scripts/handoff.py --date <date> --dry-run` so the user sees every note that would land on a repo. Sending (the same command without `--dry-run`) is the user's call, not yours: it posts to other repos. Before a real send, `VERDICTS.md` and `pickup/` must be committed and pushed: each note links to the section on `main`, and `handoff.py` refuses to send while they are uncommitted.

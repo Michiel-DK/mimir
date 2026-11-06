@@ -37,7 +37,10 @@ fetchers    ─┘                 │
 1. **Profile.** `radar.yaml` holds your *lanes*: one per question you are actually working or have
    parked, with what exists, the lists a candidate can land on, the words you use, what would reopen
    the lane, and what is explicitly not now. Draft it with `skills/radar-profile`, then review and
-   commit it. Verdicts come from this file and the fetched evidence only, never from a live read of
+   commit it. Three things the triage cannot infer, so write them: a number behind every bar
+   (licence, size, cost), a `watch:` prefix on any track with no lane, and a `pricing changes`
+   page in `sources.pages` if you want a Prices line (without one the line is dropped).
+   `radar.example.yaml` shows all three. Verdicts come from this file and the fetched evidence only, never from a live read of
    your repos.
 2. **Fetch.** Two GitHub Actions: daily trending (per language slice, with retries and a coverage
    sidecar so a silently missing slice is loud) and weekly papers (Hugging Face blog + arXiv through

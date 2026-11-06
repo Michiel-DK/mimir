@@ -26,13 +26,14 @@ For every lane, all of these keys. A lane missing any of them produced inferred 
 | `glossary` | the lane's own words, so a row can say "this is our X" | 5–15 terms |
 | `reopen_when` | concrete events, each with its **bar** when one is implied (licence: permissive = Apache/MIT/BSD; revenue-capped counts or not; size ≤ N B; cost ≤ X) | no bare adjectives like "cheap" or "permissive" |
 | `not_now` | what the lane has explicitly declined | present, even if short |
-| `candidates` (optional) | third-party items already on a list, with size and date, so a re-release is recognisable | id + date |
+| `candidates` (optional) | third-party items already on a list, with size and date, so a re-release is recognisable | `name` + `since` (YYYY-MM-DD); `size` for models |
 
 ## Also
 
-- Every `tracks` entry maps to a lane or is marked `watch: true` (then the triage lists its items once, with "watch track, no lane", and never promotes them).
+- Every `tracks` entry maps to a lane or is a watch track: its name starts with `watch:` (e.g. `"watch: mid-training"`). The triage lists a watch track's items once, with "watch track, no lane", and never promotes them.
 - `rules:` holds cross-lane constraints (dormant projects nothing routes through; "no autonomous digest"; tier orders).
-- Prices: either a `price_source` stanza or none, in which case the template's Prices line is dropped.
+- Prices: a `sources.pages` entry with `section: "pricing changes"` (read by `scripts/fetch_feeds.py`) is the price source. With none, the triage drops the template's Prices line.
+- `ALREADY` and cite-only items need no profile key: they go on the `citations:` line of the lane's pickup block.
 - Keep third-party product names out of `question` and `reopen_when`; they belong in `candidates`.
 
 ## Output
