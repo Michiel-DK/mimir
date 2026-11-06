@@ -17,6 +17,12 @@ root are empty on purpose: they are where *your* triage writes.
 
 ## How it works
 
+**The public repo is the tool, not the tracker.** It ships the fetchers, the skills and one example
+week (`examples/2026-10-19/`). You run the fetchers on your own schedule; the author's tracking runs
+in a private instance. The Actions below have no `schedule:` trigger here (`workflow_dispatch` only),
+so nothing updates this repo on its own. The snapshots under `data/` end on 2026-11-06, the date of
+this change.
+
 ```
 radar.yaml  ─┐
              ├─▶  weekly feed (papers + launch posts + trending arrivals)
@@ -39,7 +45,7 @@ fetchers    ─┘                 │
    the lane, and what is explicitly not now. Draft it with `skills/radar-profile`, then review and
    commit it. Verdicts come from this file and the fetched evidence only, never from a live read of
    your repos.
-2. **Fetch.** Two GitHub Actions: daily trending (per language slice, with retries and a coverage
+2. **Fetch.** Two GitHub Actions (manual-dispatch here; add a `schedule:` in your own fork or run the scripts from cron): daily trending (per language slice, with retries and a coverage
    sidecar so a silently missing slice is loud) and weekly papers (Hugging Face blog + arXiv through
    OpenAlex, queries from your `tracks`). Demand signals from Hacker News are optional.
    **In CI there is no profile** (`radar.yaml` is git-ignored), so the Actions fetch with built-in
@@ -76,7 +82,7 @@ cp radar.example.yaml radar.yaml           # then edit, or run skills/radar-prof
 #   in your agent: "run skills/radar-triage on examples/2026-10-19 against radar.yaml"
 
 # your own feed, from the second week on:
-python3 scripts/fetch_trending.py && python3 scripts/compute_trends.py   # daily (or let daily.yml run it)
+python3 scripts/fetch_trending.py && python3 scripts/compute_trends.py   # daily (on your own schedule)
 python3 scripts/fetch_papers.py            # weekly; OPENALEX_API_KEY optional
 python3 scripts/fetch_feeds.py             # weekly, after fetch_papers; reads sources.feeds / pages / problems_digest
 python3 scripts/arrivals.py --since <day after your last triage>          # → data/arrivals/<date>.md

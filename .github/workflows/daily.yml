@@ -2,9 +2,9 @@ name: daily-radar
 # GitHub trending (per slice in radar.yaml) + demand signals, diffed into newcomers / climbers /
 # persisters. A slice that fails after retries is reported in data/daily/<date>.meta.json and as a
 # workflow error annotation — the run stays green so the other slices still land, but it is loud.
+# No schedule here: the public repo is the tool. Tracking runs in the author's private instance;
+# run this by hand to refresh the example, or add your own `schedule:` in your fork.
 on:
-  schedule:
-    - cron: "0 6 * * *"
   workflow_dispatch:
 concurrency: {group: daily-radar, cancel-in-progress: false}
 permissions: {contents: write}
