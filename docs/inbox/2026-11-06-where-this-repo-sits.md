@@ -1,6 +1,6 @@
-# mimir under automations-first (6 Nov 2026)
+# Where mimir sits in the 6 Nov 2026 repo plan
 
-> STATUS: working-note, pointer. Written 2026-11-06 from `roger3000-hq/strategy/automations-first-repo-plan-2026-11-06.md` (private hq repo). Verb for this repo: **code, small**.
+> STATUS: working-note, pointer. Written 2026-11-06 from a private planning note. Verb for this repo: **code, small**.
 > Verbs: code = takes commits · freeze = no commits, stays as is · write-up = one public page, then freeze · archive = GitHub archive flag · leave = concept, nothing to do.
 
 ## What this repo is now
