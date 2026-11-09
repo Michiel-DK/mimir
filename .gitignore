@@ -6,3 +6,9 @@ evidence/*/
 !evidence/.gitkeep
 radar.yaml
 .claude/
+
+# Lane tooling: a local harness/ clone and its links are never committed (9 Nov 2026)
+harness/
+.claude/workflows/
+.claude/agents/
+.claude/worktrees/
